@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 28, 2025 at 05:27 AM
--- Server version: 10.4.28-MariaDB
--- PHP Version: 8.0.28
+-- Generation Time: Nov 28, 2025 at 12:48 AM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -28,16 +28,16 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `categories` (
-  `categoryID` int(11) NOT NULL,
-  `categoryName` varchar(50) NOT NULL
+  `id` int(11) NOT NULL,
+  `name` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `categories`
 --
 
-INSERT INTO `categories` (`categoryID`, `categoryName`) VALUES
-(201, '');
+INSERT INTO `categories` (`id`, `name`) VALUES
+(101, 'shoes');
 
 -- --------------------------------------------------------
 
@@ -46,36 +46,17 @@ INSERT INTO `categories` (`categoryID`, `categoryName`) VALUES
 --
 
 CREATE TABLE `customers` (
-  `customersID` int(11) NOT NULL,
-  `customerName` varchar(50) NOT NULL,
-  `address` int(11) NOT NULL,
-  `phone` int(11) NOT NULL
+  `id` int(11) NOT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `customers`
 --
 
-INSERT INTO `customers` (`customersID`, `customerName`, `address`, `phone`) VALUES
-(102, 'rayhana', 0, 123456789);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `orderitem`
---
-
-CREATE TABLE `orderitem` (
-  `orderItemID` int(11) NOT NULL,
-  `quantity` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `orderitem`
---
-
-INSERT INTO `orderitem` (`orderItemID`, `quantity`) VALUES
-(301, 1);
+INSERT INTO `customers` (`id`, `name`, `email`) VALUES
+(101, 'hazel', 'hazel@gmail.com');
 
 -- --------------------------------------------------------
 
@@ -84,17 +65,30 @@ INSERT INTO `orderitem` (`orderItemID`, `quantity`) VALUES
 --
 
 CREATE TABLE `orders` (
-  `ordersID` int(11) NOT NULL,
-  `orderDate` date NOT NULL,
-  `total` int(11) NOT NULL
+  `id` int(11) NOT NULL,
+  `customer_id` int(11) DEFAULT NULL,
+  `order_date` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `order_items`
+--
+
+CREATE TABLE `order_items` (
+  `id` int(11) NOT NULL,
+  `order_id` int(11) DEFAULT NULL,
+  `product_id` int(11) DEFAULT NULL,
+  `quantity` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `orders`
+-- Dumping data for table `order_items`
 --
 
-INSERT INTO `orders` (`ordersID`, `orderDate`, `total`) VALUES
-(101, '0000-00-00', 0);
+INSERT INTO `order_items` (`id`, `order_id`, `product_id`, `quantity`) VALUES
+(101, NULL, NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -103,22 +97,22 @@ INSERT INTO `orders` (`ordersID`, `orderDate`, `total`) VALUES
 --
 
 CREATE TABLE `products` (
-  `productID` int(11) NOT NULL,
-  `productName` varchar(50) NOT NULL,
-  `productPrice` int(11) NOT NULL,
-  `dateAdded` date NOT NULL
+  `id` int(11) NOT NULL,
+  `category_id` int(11) DEFAULT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `price` decimal(10,2) DEFAULT NULL,
+  `description` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `products`
 --
 
-INSERT INTO `products` (`productID`, `productName`, `productPrice`, `dateAdded`) VALUES
-(101, 'adidas', 500, '0000-00-00'),
-(102, 'nike', 550, '0000-00-00'),
-(103, 'air force', 600, '0000-00-00'),
-(104, 'converse', 450, '0000-00-00'),
-(105, 'new balance', 650, '0000-00-00');
+INSERT INTO `products` (`id`, `category_id`, `name`, `price`, `description`) VALUES
+(101, 101, 'adidas', 500.00, NULL),
+(102, 101, 'nike', 450.00, NULL),
+(103, 101, 'air force', 500.00, NULL),
+(104, 101, 'new balance', 600.00, NULL);
 
 --
 -- Indexes for dumped tables
@@ -128,31 +122,37 @@ INSERT INTO `products` (`productID`, `productName`, `productPrice`, `dateAdded`)
 -- Indexes for table `categories`
 --
 ALTER TABLE `categories`
-  ADD PRIMARY KEY (`categoryID`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `name` (`name`);
 
 --
 -- Indexes for table `customers`
 --
 ALTER TABLE `customers`
-  ADD PRIMARY KEY (`customersID`);
-
---
--- Indexes for table `orderitem`
---
-ALTER TABLE `orderitem`
-  ADD PRIMARY KEY (`orderItemID`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `email` (`email`);
 
 --
 -- Indexes for table `orders`
 --
 ALTER TABLE `orders`
-  ADD PRIMARY KEY (`ordersID`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `customer_id` (`customer_id`);
+
+--
+-- Indexes for table `order_items`
+--
+ALTER TABLE `order_items`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `order_id` (`order_id`),
+  ADD KEY `product_id` (`product_id`);
 
 --
 -- Indexes for table `products`
 --
 ALTER TABLE `products`
-  ADD PRIMARY KEY (`productID`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `category_id` (`category_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -162,31 +162,54 @@ ALTER TABLE `products`
 -- AUTO_INCREMENT for table `categories`
 --
 ALTER TABLE `categories`
-  MODIFY `categoryID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=202;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=102;
 
 --
 -- AUTO_INCREMENT for table `customers`
 --
 ALTER TABLE `customers`
-  MODIFY `customersID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=103;
-
---
--- AUTO_INCREMENT for table `orderitem`
---
-ALTER TABLE `orderitem`
-  MODIFY `orderItemID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=302;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=102;
 
 --
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `ordersID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=102;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `order_items`
+--
+ALTER TABLE `order_items`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=102;
 
 --
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `productID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=106;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=105;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `orders`
+--
+ALTER TABLE `orders`
+  ADD CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `order_items`
+--
+ALTER TABLE `order_items`
+  ADD CONSTRAINT `order_items_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `order_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `products`
+--
+ALTER TABLE `products`
+  ADD CONSTRAINT `products_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
