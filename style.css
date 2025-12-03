@@ -1,0 +1,242 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f6fa;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+h1, h2, h3 {
+    color: #2f3640;
+}
+
+a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+nav {
+    background-color: #2f3640;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+}
+
+nav ul li a {
+    color: #fff;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+nav ul li a:hover {
+    color: #ff9f1a;
+}
+
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.card {
+    display: block;
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 25px 20px;
+    text-align: center;
+    color: #2f3640;
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card h2 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #3498db;
+}
+
+.card p {
+    margin: 0;
+    color: #555;
+    font-size: 0.95rem;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+form, table {
+    max-width: 800px; 
+    width: 100%;     
+    margin: 20px auto; 
+}
+
+form {
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    max-width: 700px;
+}
+
+form label {
+    display: block;
+    margin-top: 15px;
+    font-weight: 600;
+}
+
+form input, form select, form textarea {
+    width: 100%;
+    padding: 12px 10px;
+    margin-top: 5px;
+    border: 1px solid #dcdde1;
+    border-radius: 6px;
+    box-sizing: border-box;
+    transition: 0.3s;
+    font-size: 0.95rem;
+}
+
+form input:focus, form select:focus, form textarea:focus {
+    border-color: #3498db;
+    outline: none;
+}
+
+form button {
+    margin-top: 20px;
+    padding: 12px 20px;
+    background-color: #3498db;
+    border: none;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: 0.3s;
+}
+
+form button:hover {
+    background-color: #2980b9;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 20px;
+    font-size: 0.95rem;
+}
+
+table th, table td {
+    padding: 12px 15px;
+    text-align: left;
+}
+
+.table-container {
+    overflow-x: auto; 
+    width: 100%;
+}
+
+.table-container table {
+    width: 100%;
+    min-width: 600px; 
+}
+
+table th {
+    background-color: #3498db;
+    color: #fff;
+    font-weight: 600;
+}
+
+table tr:nth-child(even) {
+    background-color: #f1f2f6;
+}
+
+table tr:hover {
+    background-color: #dcdde1;
+}
+
+.product-item {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.product-item select, .product-item input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #dcdde1;
+}
+
+p {
+    padding: 10px 15px;
+    border-radius: 6px;
+}
+
+p.success {
+    background-color: #2ecc71;
+    color: #fff;
+}
+
+p.error {
+    background-color: #e74c3c;
+    color: #fff;
+}
+
+.button-container {
+    text-align: center; 
+    margin-top: 20px;  
+}
+
+.button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #3498db;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: 0.3s;
+    text-align: center;
+}
+
+.button:hover {
+    background-color: #2980b9;
+}
+
+}
+
+@media (max-width: 768px) {
+    .dashboard-cards {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    form {
+        width: 100%;
+    }
+}
