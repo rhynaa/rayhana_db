@@ -1,34 +1,28 @@
 <?php
-include 'database.php';
+session_start();
+require_once 'database.php';
 
-$categories = [];
-$result = $conn->query("SELECT * FROM categories");
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $categories[] = $row;
-    }
-}
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $product_name = $_POST['product_name'] ?? '';
+    $price = $_POST['price'] ?? '';
+    $category_id = $_POST['category_id'] ?? '';
 
-if (isset($_POST['submit'])) {
-    $name = $_POST['name'];
-    $category_id = $_POST['category_id'];
-    $price = $_POST['price'];
-    $quantity = $_POST['quantity'];
-    $description = $_POST['description'];
-
-    $stmt = $conn->prepare("INSERT INTO products (name, category_id, price, quantity, description) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("sidis", $name, $category_id, $price, $quantity, $description);
-
-    if ($stmt->execute()) {
-        $message = "Product added successfully!";
-        $message_class = "success";
+    if (empty($product_name) || empty($price) || empty($category_id)) {
+        $_SESSION['error'] = 'All fields are required';
     } else {
-        $message = "Error: " . $stmt->error;
-        $message_class = "error";
+        try {
+            $stmt = $pdo->prepare("INSERT INTO products (name, price, category_id) VALUES (?, ?, ?)");
+            $stmt->execute([$product_name, $price, $category_id]);
+            $_SESSION['message'] = 'Product added successfully!';
+            header('Location: index.php');
+            exit;
+        } catch (PDOException $e) {
+            $_SESSION['error'] = 'Error adding product: ' . $e->getMessage();
+        }
     }
-
-    $stmt->close();
 }
+
+$categories = $pdo->query("SELECT id, name FROM categories ORDER BY name")->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -41,44 +35,69 @@ if (isset($_POST['submit'])) {
 </head>
 <body>
     <div class="container">
-        <div align="center">
-    <h1>Add Product</h1>
+         <div align="center">
+    <h1>Add new Product</h1>
 </div>
 
-
-        <?php if(isset($message)): ?>
-            <p class="<?= $message_class ?>"><?= $message ?></p>
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="alert alert-success">
+                <?php echo $_SESSION['message']; unset($_SESSION['message']); ?>
+            </div>
         <?php endif; ?>
 
-        <form method="post" action="">
-            <label>Product Name:</label>
-            <input type="text" name="name" required>
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="alert alert-error">
+                <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+            </div>
+        <?php endif; ?>
 
-            <label>Category:</label>
-            <select name="category_id" required>
-                <option value="">Select Category</option>
-                <?php foreach ($categories as $cat): ?>
-                    <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
-                <?php endforeach; ?>
-            </select>
+        <a href="index.php" class="btn-back">Back to Products</a>
 
-            <label>Price:</label>
-            <input type="number" step="0.01" name="price" required>
 
-            <label>Quantity:</label>
-            <input type="number" name="quantity" required>
+        <section class="form-section">
+            <form method="POST" action="add_product.php" class="form">
+                <div class="form-group">
+                    <label for="product_name">Product Name:</label>
+                    <input 
+                        type="text" 
+                        id="product_name" 
+                        name="product_name" 
+                        placeholder="Enter product name" 
+                        required
+                    >
+                </div>
 
-            <label>Description:</label>
-            <textarea name="description"></textarea>
+                <div class="form-group">
+                    <label for="price">Price:</label>
+                    <input 
+                        type="number" 
+                        id="price" 
+                        name="price" 
+                        placeholder="Enter price" 
+                        step="0.01" 
+                        min="0" 
+                        required
+                    >
+                </div>
 
-            <div style="text-align: center; margin-top: 20px;">
-    <button type="submit" class="btn btn-primary">Add Product</button>
-</div>
+                <div class="form-group">
+                    <label for="category_id">Category:</label>
+                    <select id="category_id" name="category_id" required>
+                        <option value="">Select a category</option>
+                        <?php foreach ($categories as $cat): ?>
+                            <option value="<?php echo $cat['id']; ?>">
+                                <?php echo htmlspecialchars($cat['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (count($categories) == 0): ?>
+                        <p class="error-text">No categories found. <a href="add_category.php">Create a category first</a></p>
+                    <?php endif; ?>
+                </div>
 
-        </form>
+                <button type="submit" class="btn-primary">Add Product</button>
+            </form>
+        </section>
     </div>
-    <div class="button-container">
-            <a href="index.php" class="button">Back to Dashboard</a>
-        </div>
 </body>
 </html>
