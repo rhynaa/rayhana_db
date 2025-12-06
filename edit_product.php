@@ -1,56 +1,52 @@
 <?php
-include 'database.php';
+session_start();
+require_once 'database.php';
 
-if (!isset($_GET['id'])) {
-    die("Product ID is missing.");
+$product = null;
+$error = '';
+
+// Get product ID from URL
+$product_id = $_GET['id'] ?? null;
+
+if (!$product_id) {
+    header('Location: index.php');
+    exit;
 }
-$product_id = $_GET['id'];
 
-$stmt = $conn->prepare("SELECT * FROM products WHERE id = ?");
-$stmt->bind_param("i", $product_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$product = $result->fetch_assoc();
-$stmt->close();
+// Fetch the product
+$stmt = $pdo->prepare("SELECT * FROM products WHERE id = ?");
+$stmt->execute([$product_id]);
+$product = $stmt->fetch();
 
 if (!$product) {
-    die("Product not found.");
+    $_SESSION['error'] = 'Product not found';
+    header('Location: index.php');
+    exit;
 }
 
-$categories = [];
-$result = $conn->query("SELECT * FROM categories");
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $categories[] = $row;
-    }
-}
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $product_name = $_POST['product_name'] ?? '';
+    $price = $_POST['price'] ?? '';
+    $category_id = $_POST['category_id'] ?? '';
 
-if (isset($_POST['submit'])) {
-    $name = $_POST['name'];
-    $category_id = $_POST['category_id'];
-    $price = $_POST['price'];
-    $quantity = $_POST['quantity'];
-    $description = $_POST['description'];
-
-    $stmt = $conn->prepare("UPDATE products SET name=?, category_id=?, price=?, quantity=?, description=? WHERE id=?");
-    $stmt->bind_param("sidisi", $name, $category_id, $price, $quantity, $description, $product_id);
-
-    if ($stmt->execute()) {
-        echo "<p>Product updated successfully!</p>";
-
-        $product = [
-            'name' => $name,
-            'category_id' => $category_id,
-            'price' => $price,
-            'quantity' => $quantity,
-            'description' => $description
-        ];
+    if (empty($product_name) || empty($price) || empty($category_id)) {
+        $error = 'All fields are required';
     } else {
-        echo "<p>Error: " . $stmt->error . "</p>";
+        try {
+            $stmt = $pdo->prepare("UPDATE products SET name = ?, price = ?, category_id = ? WHERE id = ?");
+            $stmt->execute([$product_name, $price, $category_id, $product_id]);
+            $_SESSION['message'] = 'Product updated successfully!';
+            header('Location: index.php');
+            exit;
+        } catch (PDOException $e) {
+            $error = 'Error updating product: ' . $e->getMessage();
+        }
     }
-
-    $stmt->close();
 }
+
+// Fetch categories for dropdown
+$categories = $pdo->query("SELECT id, name FROM categories ORDER BY name")->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -62,33 +58,63 @@ if (isset($_POST['submit'])) {
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Edit Product</h1>
-    <a href="index.php">Back to Dashboard</a>
+    <div class="container">
+        <h1>Edit Product</h1>
 
-    <form method="post" action="">
-        <label>Product Name:</label>
-        <input type="text" name="name" value="<?= htmlspecialchars($product['name']) ?>" required>
+        <?php if (!empty($error)): ?>
+            <div class="alert alert-error">
+                <?php echo $error; ?>
+            </div>
+        <?php endif; ?>
 
-        <label>Category:</label>
-        <select name="category_id" required>
-            <option value="">Select Category</option>
-            <?php foreach ($categories as $cat): ?>
-                <option value="<?= $cat['id'] ?>" <?= $cat['id'] == $product['category_id'] ? 'selected' : '' ?>>
-                    <?= $cat['name'] ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
+        <a href="index.php" class="btn-back">Back to Products</a>
 
-        <label>Price:</label>
-        <input type="number" step="0.01" name="price" value="<?= $product['price'] ?>" required>
+        <section class="form-section">
+            <form method="POST" action="edit_product.php?id=<?php echo $product_id; ?>" class="form">
+                <div class="form-group">
+                    <label for="product_name">Product Name:</label>
+                    <input 
+                        type="text" 
+                        id="product_name" 
+                        name="product_name" 
+                        value="<?php echo htmlspecialchars($product['name']); ?>"
+                        placeholder="Enter product name" 
+                        required
+                    >
+                </div>
 
-        <label>Quantity:</label>
-        <input type="number" name="quantity" value="<?= $product['quantity'] ?>" required>
+                <div class="form-group">
+                    <label for="price">Price:</label>
+                    <input 
+                        type="number" 
+                        id="price" 
+                        name="price" 
+                        value="<?php echo htmlspecialchars($product['price']); ?>"
+                        placeholder="Enter price" 
+                        step="0.01" 
+                        min="0" 
+                        required
+                    >
+                </div>
 
-        <label>Description:</label>
-        <textarea name="description"><?= htmlspecialchars($product['description']) ?></textarea>
+                <div class="form-group">
+                    <label for="category_id">Category:</label>
+                    <select id="category_id" name="category_id" required>
+                        <option value="">Select a category</option>
+                        <?php foreach ($categories as $cat): ?>
+                            <option 
+                                value="<?php echo $cat['id']; ?>"
+                                <?php echo ($cat['id'] == $product['category_id']) ? 'selected' : ''; ?>
+                            >
+                                <?php echo htmlspecialchars($cat['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-        <button type="submit" name="submit">Update Product</button>
-    </form>
+                <button type="submit" class="btn-primary">Update Product</button>
+            </form>
+        </section>
+    </div>
 </body>
 </html>
