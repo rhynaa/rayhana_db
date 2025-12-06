@@ -1,13 +1,16 @@
 <?php
-include 'database.php';
+session_start();
+require_once 'database.php';
 
-$query = "
-    SELECT o.id, o.order_date, o.total_amount, c.name AS customer_name
-    FROM orders o
-    JOIN customers c ON o.customer_id = c.id
-    ORDER BY o.order_date DESC
-";
-$result = $conn->query($query);
+// Fetch all orders with customer names and item count using JOINs
+$orders = $pdo->query("
+  SELECT o.id, o.order_date, c.name AS customer_name, COUNT(oi.id) AS total_items
+  FROM orders o
+  JOIN customers c ON o.customer_id = c.id
+  LEFT JOIN order_items oi ON o.id = oi.order_id
+  GROUP BY o.id, o.order_date, c.name, o.customer_id
+  ORDER BY o.order_date DESC
+")->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -19,39 +22,56 @@ $result = $conn->query($query);
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div align="center">
-    <h1>All Orders</h1>
-</div>
+    <div class="container">
+        <h1>All Orders</h1>
 
-   
-    <table border="1" cellpadding="5" cellspacing="0">
-        <tr>
-            <th>Order ID</th>
-            <th>Customer</th>
-            <th>Order Date</th>
-            <th>Total Amount</th>
-            <th>Actions</th>
-        </tr>
-        <?php if ($result->num_rows > 0): ?>
-            <?php while ($order = $result->fetch_assoc()): ?>
-                <tr>
-                    <td><?= $order['id'] ?></td>
-                    <td><?= htmlspecialchars($order['customer_name']) ?></td>
-                    <td><?= $order['order_date'] ?></td>
-                    <td>₱<?= number_format($order['total_amount'], 2) ?></td>
-                    <td>
-                        <a href="view_order_details.php?id=<?= $order['id'] ?>">View Details</a>
-                    </td>
-                </tr>
-            <?php endwhile; ?>
-        <?php else: ?>
-            <tr>
-                <td colspan="5">No orders found.</td>
-            </tr>
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="alert alert-success">
+                <?php echo $_SESSION['message']; unset($_SESSION['message']); ?>
+            </div>
         <?php endif; ?>
-    </table>
-    <div class="button-container">
-            <a href="index.php" class="button">Back to Dashboard</a>
-        </div>
+
+        <nav class="navbar">
+            <ul>
+                <li><a href="index.php">Products</a></li>
+                <li><a href="add_category.php">Add Category</a></li>
+                <li><a href="add_product.php">Add Product</a></li>
+                <li><a href="add_customer.php">Add Customer</a></li>
+                <li><a href="add_order.php" class="btn-primary-nav">Create Order</a></li>
+                <li><a href="view_orders.php" class="active">View Orders</a></li>
+            </ul>
+        </nav>
+
+        <section class="orders-section">
+            <?php if (count($orders) > 0): ?>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer Name</th>
+                            <th>Order Date</th>
+                            <th>Total Items</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($orders as $order): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($order['id']); ?></td>
+                                <td><?php echo htmlspecialchars($order['customer_name']); ?></td>
+                                <td><?php echo htmlspecialchars(date('Y-m-d', strtotime($order['order_date']))); ?></td>
+                                <td><?php echo htmlspecialchars($order['total_items']); ?></td>
+                                <td>
+                                    <a href="order_details.php?id=<?php echo $order['id']; ?>" class="btn-view">View Details</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <p>No orders found. <a href="add_order.php">Create your first order</a></p>
+            <?php endif; ?>
+        </section>
+    </div>
 </body>
 </html>
