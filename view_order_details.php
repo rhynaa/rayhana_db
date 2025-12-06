@@ -1,42 +1,43 @@
 <?php
-include 'database.php';
+session_start();
+require_once 'database.php';
 
-if (!isset($_GET['id'])) {
-    die("Order ID is missing.");
+$order_id = $_GET['id'] ?? null;
+
+if (!$order_id) {
+    header('Location: view_orders.php');
+    exit;
 }
 
-$order_id = $_GET['id'];
-
-$stmt = $conn->prepare("
-    SELECT o.id, o.order_date, o.total_amount, c.name AS customer_name
-    FROM orders o
-    JOIN customers c ON o.customer_id = c.id
-    WHERE o.id = ?
+$order_stmt = $pdo->prepare("
+  SELECT o.id, o.order_date, c.id AS customer_id, c.name AS customer_name, c.email
+  FROM orders o
+  JOIN customers c ON o.customer_id = c.id
+  WHERE o.id = ?
 ");
-$stmt->bind_param("i", $order_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$order = $result->fetch_assoc();
-$stmt->close();
+$order_stmt->execute([$order_id]);
+$order = $order_stmt->fetch();
 
 if (!$order) {
-    die("Order not found.");
+    $_SESSION['error'] = 'Order not found';
+    header('Location: view_orders.php');
+    exit;
 }
 
-$stmt = $conn->prepare("
-    SELECT oi.quantity, oi.price, p.name AS product_name
-    FROM order_items oi
-    JOIN products p ON oi.product_id = p.id
-    WHERE oi.order_id = ?
+$items_stmt = $pdo->prepare("
+  SELECT oi.id, oi.quantity, oi.price, p.id AS product_id, p.name AS product_name
+  FROM order_items oi
+  JOIN products p ON oi.product_id = p.id
+  WHERE oi.order_id = ?
+  ORDER BY p.name
 ");
-$stmt->bind_param("i", $order_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$order_items = [];
-while ($row = $result->fetch_assoc()) {
-    $order_items[] = $row;
+$items_stmt->execute([$order_id]);
+$orderDetails = $items_stmt->fetchAll();
+
+$total = 0;
+foreach ($orderDetails as $item) {
+    $total += $item['quantity'] * $item['price'];
 }
-$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -48,29 +49,63 @@ $stmt->close();
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Order Details - Order #<?= $order['id'] ?></h1>
-    <a href="view_orders.php">Back to Orders</a>
+    <div class="container">
+                 <div align="center">
+    <h1>Order Details</h1>
+</div>
+        <a href="view_orders.php" class="btn-back">Back to Orders</a>
 
-    <p><strong>Customer:</strong> <?= htmlspecialchars($order['customer_name']) ?></p>
-    <p><strong>Order Date:</strong> <?= $order['order_date'] ?></p>
-    <p><strong>Total Amount:</strong> ₱<?= number_format($order['total_amount'], 2) ?></p>
+        <section class="order-info">
+            <div class="info-card">
+                <h2>Order #<?php echo htmlspecialchars($order['id']); ?></h2>
+                <div class="info-row">
+                    <strong>Order Date:</strong>
+                    <span><?php echo htmlspecialchars(date('Y-m-d', strtotime($order['order_date']))); ?></span>
+                </div>
+                <div class="info-row">
+                    <strong>Customer Name:</strong>
+                    <span><?php echo htmlspecialchars($order['customer_name']); ?></span>
+                </div>
+                <div class="info-row">
+                    <strong>Customer Email:</strong>
+                    <span><?php echo htmlspecialchars($order['email'] ?? 'N/A'); ?></span>
+                </div>
+            </div>
+        </section>
 
-    <h2>Products</h2>
-    <table border="1" cellpadding="5" cellspacing="0">
-        <tr>
-            <th>Product Name</th>
-            <th>Quantity</th>
-            <th>Price</th>
-            <th>Subtotal</th>
-        </tr>
-        <?php foreach ($order_items as $item): ?>
-        <tr>
-            <td><?= htmlspecialchars($item['product_name']) ?></td>
-            <td><?= $item['quantity'] ?></td>
-            <td>₱<?= number_format($item['price'], 2) ?></td>
-            <td>₱<?= number_format($item['quantity'] * $item['price'], 2) ?></td>
-        </tr>
-        <?php endforeach; ?>
-    </table>
+        <section class="order-items">
+            <div align="center">
+    <h2>Order Items</h2>
+</div>
+            <?php if (count($orderDetails) > 0): ?>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Quantity</th>
+                            <th>Price per Unit</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($orderDetails as $item): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($item['product_name']); ?></td>
+                                <td><?php echo htmlspecialchars($item['quantity']); ?></td>
+                                <td>₱<?php echo number_format($item['price'], 2); ?></td>
+                                <td>₱<?php echo number_format($item['quantity'] * $item['price'], 2); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <tr class="total-row">
+                            <td colspan="3"><strong>Total:</strong></td>
+                            <td><strong>₱<?php echo number_format($total, 2); ?></strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <p>No items in this order.</p>
+            <?php endif; ?>
+        </section>
+    </div>
 </body>
 </html>
