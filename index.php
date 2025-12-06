@@ -1,5 +1,13 @@
 <?php
-include 'database.php';
+session_start();
+require_once 'database.php';
+
+$products = $pdo->query("
+  SELECT p.id, p.name, p.price, c.name AS category_name
+  FROM products p
+  JOIN categories c ON p.category_id = c.id
+  ORDER BY p.name
+")->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -7,35 +15,66 @@ include 'database.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>rayhana_db</title>
+    <title>Product Inventory System</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Dashboard</h1>
+        <div align="center">
+    <h1>Product Inventory System</h1>
+</div>
 
-        <div class="dashboard-cards">
-            <a href="manage_categories.php" class="card">
-                <h2>Categories</h2>
-                <p>Manage your product categories</p>
-            </a>
-            <a href="add_product.php" class="card">
-                <h2>Add Product</h2>
-                <p>Add new products to inventory</p>
-            </a>
-            <a href="add_customer.php" class="card">
-                <h2>Add Customer</h2>
-                <p>Add new customers</p>
-            </a>
-            <a href="add_order.php" class="card">
-                <h2>Add Order</h2>
-                <p>Create new orders</p>
-            </a>
-            <a href="view_orders.php" class="card">
-                <h2>View Orders</h2>
-                <p>See all orders and details</p>
-            </a>
-        </div>
+
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="alert alert-success">
+                <?php echo $_SESSION['message']; unset($_SESSION['message']); ?>
+            </div>
+        <?php endif; ?>
+
+        <nav class="navbar">
+            <ul>
+                <li><a href="index.php" class="active">Products</a></li>
+                <li><a href="add_category.php">Add Category</a></li>
+                <li><a href="add_product.php">Add Product</a></li>
+                <li><a href="add_customer.php">Add Customer</a></li>
+                <li><a href="add_order.php">Create Order</a></li>
+                <li><a href="view_orders.php">View Orders</a></li>
+            </ul>
+        </nav>
+
+        <section class="products-section">
+            <div align="center">
+    <h2>All Products</h2>
+</div>
+
+            <?php if (count($products) > 0): ?>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($products as $product): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($product['name']); ?></td>
+                                <td><?php echo htmlspecialchars($product['category_name']); ?></td>
+                                <td>₱<?php echo number_format($product['price'], 2); ?></td>
+                                <td>
+                                    <a href="edit_product.php?id=<?php echo $product['id']; ?>" class="btn-edit">Edit</a>
+                                    <a href="delete_product.php?id=<?php echo $product['id']; ?>" class="btn-delete" onclick="return confirm('Are you sure?')">Delete</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <p>No products found. <a href="add_product.php">Add your first product</a></p>
+            <?php endif; ?>
+        </section>
     </div>
 </body>
 </html>
