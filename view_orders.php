@@ -2,7 +2,6 @@
 session_start();
 require_once 'database.php';
 
-// Fetch all orders with customer names and item count using JOINs
 $orders = $pdo->query("
   SELECT o.id, o.order_date, c.name AS customer_name, COUNT(oi.id) AS total_items
   FROM orders o
@@ -75,3 +74,4 @@ $orders = $pdo->query("
     </div>
 </body>
 </html>
+
